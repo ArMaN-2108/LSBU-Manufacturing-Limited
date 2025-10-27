@@ -1,0 +1,21 @@
+Machine_ID,Machine_Type,Purchase_Date,Department_ID
+201,Press,2021-09-09,3
+202,Press,2022-12-27,3
+203,Manual Lathe,2024-04-07,3
+204,Press,2022-07-26,3
+205,Press,2024-06-09,2
+206,CAM,2021-09-25,2
+207,Manual Lathe,2024-05-05,3
+208,Press,2023-11-18,3
+209,Manual Lathe,2022-07-01,2
+210,Manual Lathe,2022-01-27,3
+211,Manual Lathe,2022-03-04,3
+212,Manual Lathe,2021-05-02,3
+213,Press,2022-01-02,3
+214,Press,2023-03-02,3
+215,Press,2021-10-01,3
+216,Press,2024-12-22,3
+217,CAM,2023-02-05,3
+218,CAM,2022-07-26,3
+219,Manual Lathe,2021-11-26,3
+220,Press,2023-07-25,2

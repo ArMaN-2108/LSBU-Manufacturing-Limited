@@ -1,0 +1,170 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2821
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 TimesNewRomanPSMT;}
+{\colortbl;\red255\green255\blue255;\red251\green2\blue7;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c100000\c14913\c0;\cssrgb\c0\c0\c0;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs28 \cf2 To view the tables::\cf0 \
+\
+SELECT * FROM Employee;\
+SELECT * FROM Department;\
+SELECT * FROM Machine;\
+SELECT * FROM Product;\
+SELECT * FROM Maintenance;\
+SELECT * FROM Shift;\
+SELECT * FROM Product_Instance;\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 SELECT * FROM Operator\
+SELECT * FROM Product_Assembly\
+SELECT * FROM_Process\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf2 Highest and lowest shifts worked last month::\
+\
+\pard\pardeftab720\sl337\partightenfactor0
+\cf3 \expnd0\expndtw0\kerning0
+WITH ShiftCount AS (\
+\'a0\'a0\'a0 SELECT \
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 Operator_ID,\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 COUNT(*) AS Total_Shifts\
+\'a0\'a0\'a0 FROM Shift\
+\'a0\'a0\'a0 WHERE \
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 Shift_Date >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()) - 1, 1)\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 AND Shift_Date < DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)\
+\'a0\'a0\'a0 GROUP BY Operator_ID\
+),\
+MaxMin AS (\
+\'a0\'a0\'a0 SELECT \
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 MAX(Total_Shifts) AS MaxShifts,\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 MIN(Total_Shifts) AS MinShifts\
+\'a0\'a0\'a0 FROM ShiftCount\
+)\
+SELECT \
+\'a0\'a0\'a0 sc.Operator_ID,\
+\'a0\'a0\'a0 e.Name,\
+\'a0\'a0\'a0 sc.Total_Shifts,\
+\'a0\'a0\'a0 CASE \
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 WHEN sc.Total_Shifts = mm.MaxShifts THEN 'Most Shifts'\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 WHEN sc.Total_Shifts = mm.MinShifts THEN 'Least Shifts'\
+\'a0\'a0\'a0 END AS Shift_Category\
+FROM ShiftCount sc\
+JOIN MaxMin mm ON sc.Total_Shifts = mm.MaxShifts OR sc.Total_Shifts = mm.MinShifts\
+JOIN Employee e ON sc.Operator_ID = e.Employee_ID;\
+\
+\cf2 Specific parts produced by machine::\
+\
+\cf3 SELECT \
+\'a0\'a0\'a0 pi.Machine_ID,\
+\'a0\'a0\'a0 p.Product_Name,\
+\'a0\'a0\'a0 pi.Manufacture_DateTime\
+FROM Product_Instance pi\
+JOIN Product p ON pi.Product_ID = p.Product_ID\
+WHERE \
+\'a0\'a0\'a0 p.Product_Name IN ('Flywheel', 'Clutch Plate', 'Pressure Plate')\
+\'a0\'a0\'a0 AND pi.Manufacture_DateTime >= DATEADD(DAY, -3, GETDATE())\
+ORDER BY \
+\'a0\'a0\'a0 pi.Machine_ID, \
+\'a0\'a0\'a0 pi.Manufacture_DateTime;\
+\cf2 \
+Machines with more than 3 maintenance records::\
+\
+\cf3 SELECT \
+\'a0\'a0\'a0 m.Machine_ID,\
+\'a0\'a0\'a0 COUNT(*) AS Maintenance_Count\
+FROM Maintenance m\
+GROUP BY m.Machine_ID\
+HAVING COUNT(*) > 3\
+ORDER BY Maintenance_Count DESC;\
+\cf2 \
+\pard\pardeftab720\partightenfactor0
+\cf2 \outl0\strokewidth0 \strokec3 business rule that an employee\'92s pay may not exceed their manager\'92s pay::\
+\
+\pard\pardeftab720\sl337\partightenfactor0
+\cf3 \outl0\strokewidth0 CREATE PROCEDURE Check_Salary_Violations\
+AS\
+BEGIN\
+\'a0\'a0\'a0 SELECT \
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 e.Employee_ID,\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 e.Name AS Employee_Name,\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 e.Salary AS Employee_Salary,\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 mgr.Employee_ID AS Manager_ID,\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 mgr.Name AS Manager_Name,\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 mgr.Salary AS Manager_Salary,\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 e.Department_ID\
+\'a0\'a0\'a0 FROM Employee e\
+\'a0\'a0\'a0 JOIN Employee mgr \
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 ON e.Department_ID = mgr.Department_ID AND mgr.Is_Manager = 1\
+\'a0\'a0\'a0 WHERE e.Is_Manager = 0\
+\'a0\'a0\'a0\'a0\'a0 AND e.Salary > mgr.Salary;\
+END;\
+\pard\pardeftab720\partightenfactor0
+\cf2 \
+Execution::\
+\
+\pard\pardeftab720\sl337\partightenfactor0
+\cf3 EXEC Check_Salary_Violations;\
+\pard\pardeftab720\partightenfactor0
+\cf2 \
+Dynamic salary report::\
+\
+\pard\pardeftab720\sl337\partightenfactor0
+\cf3 CREATE PROCEDURE Get_Salary_Report_By_Period\
+\'a0\'a0\'a0 @PeriodType VARCHAR(10) -- Accepts: 'WEEK', 'MONTH', 'QUARTER'\
+AS\
+BEGIN\
+\'a0\'a0\'a0 SET NOCOUNT ON;\
+\'a0\
+\'a0\'a0\'a0 -- Temporary date filter\
+\'a0\'a0\'a0 DECLARE @StartDate DATE;\
+\'a0\
+\'a0\'a0\'a0 -- Calculate start date based on period type\
+\'a0\'a0\'a0 IF UPPER(@PeriodType) = 'WEEK'\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 SET @StartDate = DATEADD(DAY, -7, GETDATE());\
+\'a0\'a0\'a0 ELSE IF UPPER(@PeriodType) = 'MONTH'\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 SET @StartDate = DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1);\
+\'a0\'a0\'a0 ELSE IF UPPER(@PeriodType) = 'QUARTER'\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 SET @StartDate = DATEADD(MONTH, -3, GETDATE());\
+\'a0\'a0\'a0 ELSE\
+\'a0\'a0\'a0 BEGIN\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 PRINT 'Invalid period type. Use WEEK, MONTH, or QUARTER.';\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 RETURN;\
+\'a0\'a0\'a0 END\
+\'a0\
+\'a0\'a0\'a0 -- Main report\
+\'a0\'a0\'a0 SELECT \
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 d.Department_Name,\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 e.Employee_ID,\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 e.Name AS Employee_Name,\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 e.Job_Title,\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 e.Salary,\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 e.Department_ID,\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 -- For flexibility: assume all employees were "added" recently (since we don't have Hire_Date)\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 GETDATE() AS Report_Generated_On\
+\'a0\'a0\'a0 FROM Employee e\
+\'a0\'a0\'a0 JOIN Department d ON e.Department_ID = d.Department_ID\
+\'a0\'a0\'a0 -- Uncomment below if you have Hire_Date or Shift_Date field for real filters\
+\'a0\'a0\'a0 -- WHERE e.Hire_Date >= @StartDate\
+\'a0\'a0\'a0 ORDER BY d.Department_Name, e.Name;\
+\'a0\
+\'a0\'a0\'a0 -- Department totals\
+\'a0\'a0\'a0 SELECT \
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 d.Department_Name,\
+\'a0\'a0\'a0\'a0\'a0\'a0\'a0 SUM(e.Salary) AS Total_Salary\
+\'a0\'a0\'a0 FROM Employee e\
+\'a0\'a0\'a0 JOIN Department d ON e.Department_ID = d.Department_ID\
+\'a0\'a0\'a0 -- WHERE e.Hire_Date >= @StartDate\
+\'a0\'a0\'a0 GROUP BY d.Department_Name;\
+END;\
+\pard\pardeftab720\partightenfactor0
+\cf2 \
+Execution::\
+\
+\pard\pardeftab720\sl337\partightenfactor0
+\cf3 EXEC Get_Salary_Report_By_Period @PeriodType = 'MONTH';\
+\pard\pardeftab720\partightenfactor0
+\cf2 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf2 \kerning1\expnd0\expndtw0 \
+\cf0 \
+}

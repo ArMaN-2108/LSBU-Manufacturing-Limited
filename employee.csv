@@ -1,0 +1,7 @@
+SELECT * FROM Employee;
+SELECT * FROM Department;
+SELECT * FROM Machine;
+SELECT * FROM Product;
+SELECT * FROM Maintenance;
+SELECT * FROM Shift;
+SELECT * FROM Product_Instance;
